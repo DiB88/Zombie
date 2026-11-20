@@ -1,71 +1,407 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#101329">
-<title>Крестики-нолики</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Зомби против растений</title>
 <style>
-:root{color-scheme:dark;--bg:#101329;--panel:#191e3b;--muted:#aab0d0;--x:#62e6ff;--o:#c69bff;--accent:#8d7bff}
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px;background:radial-gradient(ellipse at 20% 0%,#293064 0,transparent 45%),radial-gradient(ellipse at 100% 100%,#3b225c 0,transparent 40%),var(--bg);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#fff}
-.app{width:min(100%,440px);padding:26px;border:1px solid #ffffff20;border-radius:28px;background:#171b35dc;box-shadow:0 24px 80px #0008;backdrop-filter:blur(12px)}
-h1{margin:0;text-align:center;font-size:clamp(27px,7vw,36px);letter-spacing:-1px}
-.sub{text-align:center;color:var(--muted);margin:7px 0 24px;font-size:14px}
-.score{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
-.player{padding:13px;border-radius:16px;background:#ffffff09;border:1px solid #ffffff15;text-align:center}
-.player strong{display:block;font-size:25px;margin-bottom:2px}
-.player span{font-size:12px;color:var(--muted)}
-.x{color:var(--x)}.o{color:var(--o)}
-.status{min-height:48px;display:grid;place-items:center;text-align:center;color:#e8eaff;font-weight:650;margin:8px 0 14px}
-.board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.cell{aspect-ratio:1;border:1px solid #ffffff19;border-radius:18px;background:linear-gradient(145deg,#252b50,#1b203e);font-size:clamp(42px,13vw,66px);font-weight:800;display:grid;place-items:center;cursor:pointer;transition:transform .15s,border-color .15s,background .15s;touch-action:manipulation}
-.cell:active{transform:scale(.96)}.cell:disabled{cursor:default}
-.cell.win{background:#37346a;border-color:#a99cff;box-shadow:0 0 22px #9b86ff55}
-.actions{display:flex;gap:10px;margin-top:20px}
-button.action{flex:1;border:0;border-radius:14px;padding:14px 12px;font-size:14px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(110deg,#7769ff,#a56cf4)}
-button.secondary{background:#ffffff12;border:1px solid #ffffff20}
-.note{text-align:center;color:#9098bd;font-size:11px;margin:17px 0 0}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #172b19;
+  color: white;
+  text-align: center;
+}
+h1 {
+  color: #ffe66d;
+  text-shadow: 3px 3px #542d14;
+  margin: 15px 5px;
+}
+#top {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px;
+}
+.info {
+  background: #284d2b;
+  border: 2px solid #a5d66d;
+  border-radius: 12px;
+  padding: 10px 15px;
+  font-weight: bold;
+}
+button {
+  cursor: pointer;
+  border: 2px solid #ffe66d;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: bold;
+  background: #397c36;
+  color: white;
+}
+button:hover { background: #58a84b; }
+#shop {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px;
+}
+.plant {
+  background: #345b30;
+  min-width: 95px;
+  font-size: 14px;
+}
+.plant.selected { background: #c58d23; }
+#game {
+  position: relative;
+  width: min(950px, 96vw);
+  height: 480px;
+  margin: 10px auto;
+  border: 5px solid #694321;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #75b94d;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+}
+.cell {
+  border: 1px solid rgba(30,80,20,.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(22px, 4vw, 39px);
+  cursor: crosshair;
+  position: relative;
+  z-index: 1;
+}
+.cell:nth-child(odd) { background: rgba(255,255,255,.07); }
+.cell:nth-child(18n+1),
+.cell:nth-child(18n+2) { background: rgba(40,120,25,.08); }
+.entity {
+  position: absolute;
+  font-size: 30px;
+  pointer-events: none;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+}
+.sun {
+  position: absolute;
+  z-index: 8;
+  font-size: 28px;
+  cursor: pointer;
+  animation: shine 1s infinite alternate;
+}
+@keyframes shine {
+  from { transform: scale(.9); }
+  to { transform: scale(1.2); }
+}
+#message {
+  min-height: 28px;
+  color: #ffe66d;
+  font-weight: bold;
+}
+#help { color: #d5e8c5; font-size: 13px; padding: 5px; }
+@media(max-width:600px) {
+  #game { height: 380px; }
+  .entity { font-size: 23px; }
+  .cell { font-size: 24px; }
+}
 </style>
 </head>
 <body>
-<main class="app">
-  <h1>Крестики-нолики</h1>
-  <p class="sub">Маленькая битва умов ✨</p>
-  <section class="score" aria-label="Счёт">
-    <div class="player"><strong class="x">✕ <b id="scoreX">0</b></strong><span>Игрок X</span></div>
-    <div class="player"><strong class="o">○ <b id="scoreO">0</b></strong><span>Игрок O</span></div>
-  </section>
-  <div class="status" id="status" aria-live="polite">Ход игрока X</div>
-  <section class="board" id="board" aria-label="Игровое поле">
-    <button class="cell" aria-label="Клетка 1"></button><button class="cell" aria-label="Клетка 2"></button><button class="cell" aria-label="Клетка 3"></button>
-    <button class="cell" aria-label="Клетка 4"></button><button class="cell" aria-label="Клетка 5"></button><button class="cell" aria-label="Клетка 6"></button>
-    <button class="cell" aria-label="Клетка 7"></button><button class="cell" aria-label="Клетка 8"></button><button class="cell" aria-label="Клетка 9"></button>
-  </section>
-  <div class="actions">
-    <button class="action" id="restart">Новая игра</button>
-    <button class="action secondary" id="reset">Сбросить счёт</button>
-  </div>
-  <p class="note">Игра для двух игроков на одном устройстве</p>
-</main>
+
+<h1>🌻 ЗОМБИ ПРОТИВ РАСТЕНИЙ 🧟</h1>
+
+<div id="top">
+  <div class="info">☀️ Солнце: <span id="sunCount">150</span></div>
+  <div class="info">🏆 Очки: <span id="score">0</span></div>
+  <div class="info">🌊 Волна: <span id="wave">1</span></div>
+  <button onclick="restart()">🔄 Заново</button>
+</div>
+
+<div id="shop">
+  <button class="plant selected" data-type="pea">
+    🌱 Горохострел<br>💰 100
+  </button>
+  <button class="plant" data-type="sun">
+    🌻 Подсолнух<br>💰 50
+  </button>
+  <button class="plant" data-type="wall">
+    🥔 Орех<br>💰 75
+  </button>
+  <button class="plant" data-type="ice">
+    🧊 Ледяной цветок<br>💰 125
+  </button>
+</div>
+
+<div id="message">Выбери растение и нажми на клетку!</div>
+<div id="game"></div>
+<div id="help">
+  Уничтожай зомби! Не дай им дойти до левого края.
+  Собирай ☀️ солнце кликом мыши.
+</div>
+
 <script>
-const cells=[...document.querySelectorAll('.cell')],statusEl=document.getElementById('status');
-const scoreX=document.getElementById('scoreX'),scoreO=document.getElementById('scoreO');
-const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-let board=Array(9).fill(''),turn='X',finished=false,scores={X:0,O:0};
-function paintStatus(text){statusEl.textContent=text}
-function play(i){
- if(finished||board[i])return;
- board[i]=turn;cells[i].textContent=turn==='X'?'✕':'○';cells[i].classList.add(turn.toLowerCase());cells[i].disabled=true;
- const line=wins.find(combo=>combo.every(n=>board[n]===turn));
- if(line){finished=true;line.forEach(n=>cells[n].classList.add('win'));scores[turn]++;scoreX.textContent=scores.X;scoreO.textContent=scores.O;paintStatus(`🎉 Игрок ${turn} победил!`);cells.forEach(c=>c.disabled=true);return}
- if(board.every(Boolean)){finished=true;paintStatus('Ничья! Хорошая партия 🤝');return}
- turn=turn==='X'?'O':'X';paintStatus(`Ход игрока ${turn}`);
+const game = document.getElementById("game");
+const sunText = document.getElementById("sunCount");
+const scoreText = document.getElementById("score");
+const waveText = document.getElementById("wave");
+const message = document.getElementById("message");
+
+const ROWS = 5;
+const COLS = 9;
+const costs = { pea:100, sun:50, wall:75, ice:125 };
+const emojis = {
+  pea:"🌱", sun:"🌻", wall:"🥔", ice:"🧊"
+};
+
+let plants = [];
+let zombies = [];
+let bullets = [];
+let suns = [];
+let sunCount = 150;
+let score = 0;
+let selected = "pea";
+let wave = 1;
+let gameOver = false;
+let lastSpawn = 0;
+let lastSun = 0;
+let lastTime = 0;
+let cells = [];
+
+function createGrid() {
+  game.innerHTML = "";
+  cells = [];
+  for(let r=0;r<ROWS;r++) {
+    cells[r] = [];
+    for(let c=0;c<COLS;c++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.onclick = () => placePlant(r,c);
+      game.appendChild(cell);
+      cells[r][c] = cell;
+    }
+  }
 }
-function newGame(){board=Array(9).fill('');turn='X';finished=false;cells.forEach(c=>{c.textContent='';c.disabled=false;c.classList.remove('x','o','win')});paintStatus('Ход игрока X')}
-cells.forEach((c,i)=>c.addEventListener('click',()=>play(i)));
-document.getElementById('restart').addEventListener('click',newGame);
-document.getElementById('reset').addEventListener('click',()=>{scores={X:0,O:0};scoreX.textContent='0';scoreO.textContent='0';newGame()});
+
+function updateInfo() {
+  sunText.textContent = sunCount;
+  scoreText.textContent = score;
+  waveText.textContent = wave;
+}
+
+document.querySelectorAll(".plant").forEach(btn=>{
+  btn.onclick = ()=>{
+    selected = btn.dataset.type;
+    document.querySelectorAll(".plant").forEach(b=>b.classList.remove("selected"));
+    btn.classList.add("selected");
+  };
+});
+
+function placePlant(r,c) {
+  if(gameOver) return;
+  if(plants.some(p=>p.row===r && p.col===c)) {
+    message.textContent = "Здесь уже есть растение!";
+    return;
+  }
+  if(sunCount < costs[selected]) {
+    message.textContent = "Недостаточно солнца!";
+    return;
+  }
+  sunCount -= costs[selected];
+  plants.push({
+    row:r, col:c, type:selected,
+    hp:selected==="wall"?500:100,
+    cooldown:0
+  });
+  updateInfo();
+  message.textContent = "Растение посажено!";
+}
+
+function spawnZombie() {
+  const row = Math.floor(Math.random()*ROWS);
+  const strong = wave >= 3 && Math.random()<0.3;
+  zombies.push({
+    row, x:950,
+    hp:strong?260:150,
+    speed:strong?0.25:0.4+Math.random()*0.15,
+    emoji:strong?"🧟‍♂️":"🧟",
+    attack:0
+  });
+}
+
+function spawnSun(x,y) {
+  const el = document.createElement("div");
+  el.className = "sun";
+  el.textContent = "☀️";
+  el.style.left = x+"px";
+  el.style.top = y+"px";
+  game.appendChild(el);
+  const obj = {x,y,el};
+  suns.push(obj);
+  el.onclick = ()=>{
+    if(!suns.includes(obj)) return;
+    sunCount += 25;
+    suns = suns.filter(s=>s!==obj);
+    el.remove();
+    updateInfo();
+  };
+}
+
+function shoot(p) {
+  const x = p.col*(game.clientWidth/COLS)+game.clientWidth/COLS;
+  const y = (p.row+.5)*(game.clientHeight/ROWS);
+  bullets.push({
+    x,y,row:p.row,
+    damage:p.type==="ice"?25:35,
+    slow:p.type==="ice"
+  });
+}
+
+function makeEntity(emoji,x,y) {
+  const el = document.createElement("div");
+  el.className = "entity";
+  el.textContent = emoji;
+  el.style.left = x+"px";
+  el.style.top = y+"px";
+  game.appendChild(el);
+  return el;
+}
+
+function render() {
+  document.querySelectorAll(".entity").forEach(e=>e.remove());
+
+  plants.forEach(p=>{
+    const x=(p.col+.5)*game.clientWidth/COLS;
+    const y=(p.row+.5)*game.clientHeight/ROWS;
+    makeEntity(emojis[p.type],x,y);
+  });
+
+  zombies.forEach(z=>{
+    const el=makeEntity(z.emoji,z.x,(z.row+.5)*game.clientHeight/ROWS);
+    if(z.hp<100) el.style.filter="grayscale(.5)";
+  });
+
+  bullets.forEach(b=>{
+    makeEntity(b.slow?"❄️":"🟢",b.x,b.y);
+  });
+}
+
+function update(dt) {
+  if(gameOver) return;
+
+  const now=Date.now();
+  if(now-lastSpawn>Math.max(1400,4500-wave*300)) {
+    spawnZombie();
+    lastSpawn=now;
+  }
+
+  if(now-lastSun>6500) {
+    spawnSun(
+      Math.random()*(game.clientWidth-60)+20,
+      Math.random()*(game.clientHeight-50)+15
+    );
+    lastSun=now;
+  }
+
+  plants.forEach(p=>{
+    if(p.type==="sun") {
+      p.cooldown+=dt;
+      if(p.cooldown>7000) {
+        spawnSun(
+          (p.col+.5)*game.clientWidth/COLS,
+          (p.row+.5)*game.clientHeight/ROWS
+        );
+        p.cooldown=0;
+      }
+    }
+    if(p.type==="pea"||p.type==="ice") {
+      const target=zombies.some(z=>z.row===p.row && z.x>p.col*game.clientWidth/COLS);
+      if(target) {
+        p.cooldown+=dt;
+        if(p.cooldown>1300) {
+          shoot(p);
+          p.cooldown=0;
+        }
+      }
+    }
+  });
+
+  bullets.forEach(b=>{
+    b.x+=dt*.25;
+    zombies.forEach(z=>{
+      if(z.row===b.row && Math.abs(z.x-b.x)<25 && !b.hit) {
+        z.hp-=b.damage;
+        if(b.slow) z.speed*=.65;
+        b.hit=true;
+      }
+    });
+  });
+
+  bullets=bullets.filter(b=>b.x<game.clientWidth&&!b.hit);
+
+  zombies.forEach(z=>{
+    const col=Math.floor(z.x/(game.clientWidth/COLS));
+    const plant=plants.find(p=>p.row===z.row && p.col===col);
+    if(plant) {
+      z.attack+=dt;
+      if(z.attack>500) {
+        plant.hp-=20;
+        z.attack=0;
+        if(plant.hp<=0) plants=plants.filter(p=>p!==plant);
+      }
+    } else {
+      z.x-=z.speed*dt;
+    }
+    if(z.x<0) {
+      gameOver=true;
+      message.textContent="💀 Зомби победили! Нажми «Заново».";
+    }
+  });
+
+  const dead=zombies.filter(z=>z.hp<=0);
+  if(dead.length) {
+    score+=dead.length*10;
+    zombies=zombies.filter(z=>z.hp>0);
+    if(score>=wave*100) wave++;
+    updateInfo();
+  }
+}
+
+function restart() {
+  plants=[];
+  zombies=[];
+  bullets=[];
+  suns.forEach(s=>s.el.remove());
+  suns=[];
+  sunCount=150;
+  score=0;
+  wave=1;
+  gameOver=false;
+  lastSpawn=Date.now();
+  lastSun=Date.now();
+  message.textContent="Выбери растение и защищай свой сад!";
+  updateInfo();
+  createGrid();
+}
+
+function loop(now) {
+  const dt=Math.min(now-lastTime,50);
+  lastTime=now;
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+createGrid();
+updateInfo();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
