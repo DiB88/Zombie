@@ -230,7 +230,7 @@ function spawnZombie() {
   zombies.push({
     row, x:950,
     hp:strong?260:150,
-    speed:strong?0.25:0.4+Math.random()*0.15,
+    speed:strong?0.25/3:(0.4+Math.random()*0.15)/3,
     emoji:strong?"🧟‍♂️":"🧟",
     attack:0
   });
